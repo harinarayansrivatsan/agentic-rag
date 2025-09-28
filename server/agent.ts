@@ -211,16 +211,41 @@ Current time: {time}`,
     const checkpointer = new MongoDBSaver({ client, dbName })
     const app = workflow.compile({ checkpointer })
 
-    // Execute the workflow
-    const finalState = await app.invoke(
-      {
-        messages: [new HumanMessage(query)],
-      },
-      {
-        recursionLimit: 15,
-        configurable: { thread_id: thread_id }
+    // Execute the workflow with proper state management for conversation history
+    const config = { configurable: { thread_id: thread_id }, recursionLimit: 15 }
+
+    // For continuing conversations, we need to get existing state and add new message
+    // For new conversations, we start fresh
+    let initialState
+    try {
+      // Try to get existing state first
+      console.log(`Getting state for thread_id: ${thread_id}`)
+      const currentState = await app.getState(config)
+      console.log("Current state:", currentState ? "Found" : "Not found")
+
+      if (currentState && currentState.values && currentState.values.messages) {
+        console.log(`Found ${currentState.values.messages.length} existing messages`)
+        // Add new message to existing conversation
+        initialState = {
+          messages: [...currentState.values.messages, new HumanMessage(query)]
+        }
+        console.log(`Total messages after adding new one: ${initialState.messages.length}`)
+      } else {
+        console.log("Starting new conversation")
+        // Start new conversation
+        initialState = {
+          messages: [new HumanMessage(query)]
+        }
       }
-    )
+    } catch (error) {
+      console.log("Error getting state, starting fresh:", error)
+      // If getting state fails, start fresh (new conversation)
+      initialState = {
+        messages: [new HumanMessage(query)]
+      }
+    }
+
+    const finalState = await app.invoke(initialState, config)
 
     const response = finalState.messages[finalState.messages.length - 1].content
     console.log("Agent response:", response)
@@ -232,6 +257,8 @@ Current time: {time}`,
 
     if (error.status === 429) {
       throw new Error("Service temporarily unavailable due to rate limits. Please try again in a minute.")
+    } else if (error.status === 503) {
+      throw new Error("Google Gemini API is currently overloaded. Please try again in a few moments.")
     } else if (error.status === 401) {
       throw new Error("Authentication failed. Please check your API configuration.")
     } else {

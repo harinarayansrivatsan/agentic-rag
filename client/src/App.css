@@ -81,12 +81,32 @@ body {
   font-size: 16px;
 }
 
+.chat-header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.reset-button,
 .close-button {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover,
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .chat-messages {

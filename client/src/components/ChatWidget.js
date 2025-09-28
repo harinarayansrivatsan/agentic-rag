@@ -1,7 +1,7 @@
 // Import React and its hooks for component state and lifecycle management
 import React, { useState, useEffect, useRef } from 'react'
 // Import Font Awesome icons for the chat interface
-import { FaRobot, FaPaperPlane, FaTimes, FaCommentDots } from 'react-icons/fa'
+import { FaRobot, FaPaperPlane, FaTimes, FaCommentDots, FaRedo } from 'react-icons/fa'
 
 // Main chat widget component
 const ChatWidget = () => {
@@ -11,8 +11,11 @@ const ChatWidget = () => {
   const [messages, setMessages] = useState([])
   // State to track current input field value
   const [inputValue, setInputValue] = useState('')
-  // State to store conversation thread ID (null for new conversations)
-  const [threadId, setThreadId] = useState(null)
+  // State to store conversation thread ID (persist across sessions)
+  const [threadId, setThreadId] = useState(() => {
+    // Try to get existing threadId from localStorage
+    return localStorage.getItem('chatThreadId') || null
+  })
   // Ref to reference the bottom of messages container for auto-scrolling
   const messagesEndRef = useRef(null)
 
@@ -42,6 +45,13 @@ const ChatWidget = () => {
   const toggleChat = () => {
     // Flip the current isOpen state (true becomes false, false becomes true)
     setIsOpen(!isOpen)
+  }
+
+  // Function to clear chat history and start fresh conversation
+  const clearChatHistory = () => {
+    setMessages([])
+    setThreadId(null)
+    localStorage.removeItem('chatThreadId')
   }
 
   // Function to handle changes in the input field
@@ -108,6 +118,10 @@ const ChatWidget = () => {
       setMessages(prevMessages => [...prevMessages, agentResponse])
       // Update thread ID for future messages in this conversation
       setThreadId(data.threadId)
+      // Persist threadId to localStorage for future sessions
+      if (data.threadId) {
+        localStorage.setItem('chatThreadId', data.threadId)
+      }
       // Log updated messages for debugging
       console.log(messages)
     } catch (error) {
@@ -123,7 +137,7 @@ const ChatWidget = () => {
       {/* Conditional rendering: show chat interface if open, otherwise show chat button */}
       {isOpen ? (
         <>
-          {/* Chat header with title and close button */}
+          {/* Chat header with title and buttons */}
           <div className="chat-header">
             <div className="chat-title">
               {/* Robot icon */}
@@ -131,10 +145,20 @@ const ChatWidget = () => {
               {/* Chat title text */}
               <h3>Shop Assistant</h3>
             </div>
-            {/* Close button with X icon */}
-            <button className="close-button" onClick={toggleChat}>
-              <FaTimes />
-            </button>
+            <div className="chat-header-buttons">
+              {/* Reset chat button */}
+              <button
+                className="reset-button"
+                onClick={clearChatHistory}
+                title="Reset chat"
+              >
+                <FaRedo />
+              </button>
+              {/* Close button with X icon */}
+              <button className="close-button" onClick={toggleChat}>
+                <FaTimes />
+              </button>
+            </div>
           </div>
 
           {/* Messages container */}
