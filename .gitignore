@@ -1,0 +1,17 @@
+# 🚫 Files to ignore when pushing to GitHub
+# Only includes files that actually exist in this codebase
+
+# Environment files (contains API keys and secrets)
+server/.env
+
+# Dependencies (can be reinstalled with npm install)
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# macOS system files
+.DS_Store
+client/.DS_Store
+
+# Claude Code local settings (personal configuration)
+.claude/settings.local.json
